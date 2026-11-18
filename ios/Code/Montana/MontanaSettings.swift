@@ -837,9 +837,9 @@ struct MTWallpaperPreview: View {
                     // words as they will stand — under the bar, where the eye starts; the picture stays free below.
                     VStack {
                         VStack(spacing: 7) {
-                            MessageBubble(message: Message(text: String(localized: "Hello! This is the Montana style.", bundle: MTLanguage.bundle), isFromMe: false, time: nowHHMM()), player: VoicePlayer.shared)
-                            MessageBubble(message: Message(text: String(localized: "Your message", bundle: MTLanguage.bundle), isFromMe: true, time: nowHHMM()), player: VoicePlayer.shared)
-                            MessageBubble(message: Message(text: String(localized: "Their message", bundle: MTLanguage.bundle), isFromMe: false, time: nowHHMM()), player: VoicePlayer.shared)
+                            MessageBubble(message: Message(text: String(localized: "Hello! This is the Montana style.", bundle: MTLanguage.bundle), isFromMe: false), player: VoicePlayer.shared)
+                            MessageBubble(message: Message(text: String(localized: "Your message", bundle: MTLanguage.bundle), isFromMe: true), player: VoicePlayer.shared)
+                            MessageBubble(message: Message(text: String(localized: "Their message", bundle: MTLanguage.bundle), isFromMe: false), player: VoicePlayer.shared)
                         }
                         .padding(.horizontal, 12).padding(.top, 8)
                         Spacer()
@@ -984,8 +984,8 @@ struct AppearanceView: View {
                      cbPeerOutline, "\(cbPeerOutlineOp)", "\(cbPeerOutlineW)", "\(cbBgOn)", cbBgType, cbBg1, cbBg2,
                      "\(MTBubbleGround.picture.count)", ov.map { "\($0)" } ?? "", c ?? ""].joined(separator: "|")
         return VStack(spacing: 7) {
-            MessageBubble(message: Message(text: String(localized: "Their message", bundle: MTLanguage.bundle), isFromMe: false, time: nowHHMM()), player: VoicePlayer.shared)
-            MessageBubble(message: Message(text: String(localized: "Your message", bundle: MTLanguage.bundle), isFromMe: true, time: nowHHMM()), player: VoicePlayer.shared)
+            MessageBubble(message: Message(text: String(localized: "Their message", bundle: MTLanguage.bundle), isFromMe: false), player: VoicePlayer.shared)
+            MessageBubble(message: Message(text: String(localized: "Your message", bundle: MTLanguage.bundle), isFromMe: true), player: VoicePlayer.shared)
         }
         .padding(.horizontal, 12).padding(.vertical, 14)
         .frame(maxWidth: .infinity)

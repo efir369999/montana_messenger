@@ -72,31 +72,6 @@ final class MontanaDeliveryEngine {
         }
     }
 
-    /// THE MOMENT OF A LETTER, DECIDED IN ONE PLACE. The label a person reads and the place the row
-    /// stands in tell one story ([C-1]), and both come from the letter's OWN moment, never from the
-    /// moment this phone happened to pick it up. Two sources, in order: the birth millisecond in the
-    /// letter's name, and — for a build whose names carry none — the moment the SENDER handed the
-    /// letter to the node (the box keeps it). Only when neither is known does the arrival stand in,
-    /// and then it is the honest best we have. Measured 01.09: two pictures sent at 17:49 from a
-    /// build that stamps no name wore 18:47 — the minute this phone woke and collected them.
-    ///
-    /// A CORRESPONDENT'S BIRTH STANDS NO FURTHER AHEAD THAN THIS PHONE'S CLOCK AND THE TOLERANCE (spec Stage 9 §Ordering, the note
-    /// beside ChatStore.before: «clamp into [..., local receive time + tolerance]; own messages (multi-device echo) are not clamped»;
-    /// the tolerance is the stage's audit closure S9-F2: two minutes; the author's word 11.10.2026 17:1x UTC: «check the whole
-    /// architecture of the chats' time chains, so there are no holes by the constitution»). The name's millisecond is the
-    /// sender's claim, and a claim of a far year stood under every later letter of the chat for good. A letter of my own other
-    /// device keeps its own moment.
-    static let birthTolerance: Double = 120
-    static func letterMoment(mid: String, sentAt: Double?, own: Bool = false) -> Double {
-        let claimed = claimedMoment(mid: mid, sentAt: sentAt)
-        return own ? claimed : min(claimed, Date().timeIntervalSince1970 + birthTolerance)
-    }
-    private static func claimedMoment(mid: String, sentAt: Double?) -> Double {
-        if let born = ChatStore.birthMs(fromMid: mid) { return born }
-        if let sentAt, sentAt > 0 { return sentAt }
-        return Date().timeIntervalSince1970
-    }
-
     /// A letter of this person's other device lands as mine: a row stands on my side, «sent» until the correspondent's receipt
     /// moves it, burning no coin again (its own device burned the bubble's) and ringing nothing. A word that changes no row -- a
     /// name, a face, a receipt, a presence, a call written as a letter -- is that device's word to the correspondent, applied
@@ -132,9 +107,8 @@ final class MontanaDeliveryEngine {
             MontanaTrace.mark("rx_own", mid: mid, "buried here -- not landing")
             return
         }
-        let born = Self.letterMoment(mid: sid, sentAt: sentAt, own: true)
-        var m = Message(text: text, isFromMe: true, time: hhmm(at: born),
-                        replyText: (quoteText?.isEmpty == false) ? quoteText : nil,
+        let born = MTMid.moment(sid, sentAt: sentAt, own: true)
+        var m = Message(text: text, isFromMe: true, replyText: (quoteText?.isEmpty == false) ? quoteText : nil,
                         deliveryStatus: .sent, msgId: sid, createdAt: born,
                         replyToId: store.localId(forMid: quoteMid, chat: from), transport: transport)
         m.linkPreview = linkPreview
@@ -159,7 +133,7 @@ final class MontanaDeliveryEngine {
         }
         if text.hasPrefix(convDelMark) {
             // A funeral no newer than the one kept is a repeat (ChatStore.noteFuneral, the critic R-5).
-            if let moment = ChatStore.birthMs(fromMid: mid), !store.noteFuneral(from, at: moment) { return true }
+            if let moment = MTMid.birth(mid), !store.noteFuneral(from, at: moment) { return true }
             // The funeral is the other device's to deliver; here the pipe only dies (drainAll finishes a dying pipe with no
             // tombstone queued), as the receiver's does.
             MTPipeBook.markDying(from)
@@ -283,7 +257,7 @@ final class MontanaDeliveryEngine {
         // below, and a twin's mirrored copy keeps its road (its row is healed when its chat opens).
         if !mirrored, text.hasPrefix(MontanaWakePush.letterBlobMark),
            store.messages[MTSamePair.root(from)]?.contains(where: { $0.msgId == "mid:\(mid)" }) != true {
-            let born = Self.letterMoment(mid: mid, sentAt: sentAt, own: own)
+            let born = MTMid.moment(mid, sentAt: sentAt, own: own)
             Task { @MainActor [weak self] in
                 switch await MontanaWakePush.takeLongLetter(conv: own ? "" : from, mid: mid, text: text, bornAt: born) {   // own: nobody to tell
                 case .landed(let full):
@@ -376,8 +350,7 @@ final class MontanaDeliveryEngine {
             if text.hasPrefix(mediaMark), let row = store.messages[home]?.first(where: { $0.msgId == sid }),
                let f = row.attachment?.file, !MontanaMediaStore.exists(f) {
                 MontanaTrace.mark("rx_refill", mid: mid, "the row stands without its file — the copy's cargo is taken")
-                store.reconstructMedia(from, body: String(text.dropFirst(mediaMark.count)), isFromMe: false,
-                                       time: row.time, msgId: sid, senderRef: row.senderRef, transport: transport)
+                store.reconstructMedia(from, body: String(text.dropFirst(mediaMark.count)), isFromMe: false, msgId: sid, senderRef: row.senderRef, transport: transport)
                 return
             }
             // THE LINE NAMES WHAT THE DOOR DID (23.09): it said «receipt repeated» while the door,
@@ -402,7 +375,7 @@ final class MontanaDeliveryEngine {
             // rename a person back past a fresher word.
             // Only a proven correspondent's letter names them (theirs, above): a letter of no proven author -- no author field, or a
             // word of the seed's other device -- would rename the correspondent with the person's own name (the author's word 24464).
-            if let sn = senderName, !sn.isEmpty, sn.count <= 64, theirs { store.setPeerName(ref: from, name: sn, at: ChatStore.birthMs(fromMid: mid) ?? sentAt ?? 0, source: "envelope") }
+            if let sn = senderName, !sn.isEmpty, sn.count <= 64, theirs { store.setPeerName(ref: from, name: sn, at: MTMid.birth(mid) ?? sentAt ?? 0, source: "envelope") }
             // The envelope's glyph is buried unread: the face is derived from the name ([C-1], 20.09).
         }
         // A missed-call marker letter is an ORDINARY feed row with call styling: the same
@@ -441,12 +414,11 @@ final class MontanaDeliveryEngine {
         // is the only one ([C-1]). createdAt = the SENDER'S TIME from the letter name (ordered
         // by typing, not by receipt); an old letter without a time in its name — moment of
         // receipt, as before.
-        let born = Self.letterMoment(mid: sid, sentAt: sentAt)
+        let born = MTMid.moment(sid, sentAt: sentAt)
         // The label the person reads says WHEN IT WAS SENT — the same birth the row is
         // sorted by. The arrival moment used to stand here: a letter that slept in the node
         // box wore 7:56 while standing above a 7:31 call it preceded (T1, 29.08).
-        var row = Message(text: text, isFromMe: false, time: hhmm(at: born),
-                          replyText: (quoteText?.isEmpty == false) ? quoteText : nil,
+        var row = Message(text: text, isFromMe: false, replyText: (quoteText?.isEmpty == false) ? quoteText : nil,
                           deliveryStatus: .delivered, msgId: sid,
                           createdAt: born,
                           replyToId: store.localId(forMid: quoteMid, chat: from),

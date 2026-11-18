@@ -1059,6 +1059,7 @@ final class MontanaCall: NSObject {
             var rs = CallSignalOut(ctrl: "call-resume"); rs.targetDevice = peerDevice
             sendSignal?(p, rs)
             MontanaTrace.mark("call_hold", "soft-resumed peer=\(String(p.prefix(10)))")
+            DispatchQueue.main.async { CallUIModel.shared.rebind("resumed") }
             DispatchQueue.main.async {
                 guard !self.measuring else { return }
                 self.measuring = true
@@ -3358,7 +3359,7 @@ final class MontanaCall: NSObject {
                 DispatchQueue.main.async { CallUIModel.shared.tick += 1 }
             }
             MontanaTrace.mark("call_screen", "peer sharing on grew=\(peerShareGrewVideo ? 1 : 0)")
-            DispatchQueue.main.async { CallUIModel.shared.peerSharing = true }
+            DispatchQueue.main.async { CallUIModel.shared.peerSharing = true; CallUIModel.shared.rebind("peer sharing on") }
         case "call-screen-off":
             guard from == peer else { return }
             let backToAudio = video == false || (video == nil && peerShareGrewVideo)
@@ -3377,7 +3378,7 @@ final class MontanaCall: NSObject {
                     CallUIModel.shared.tick += 1
                 }
             }
-            DispatchQueue.main.async { CallUIModel.shared.peerSharing = false }
+            DispatchQueue.main.async { CallUIModel.shared.peerSharing = false; CallUIModel.shared.rebind("peer sharing off") }
         case "call-hold":
             guard from == peer else { return }
             MontanaTrace.mark("call_hold", "held by peer")
@@ -3385,7 +3386,7 @@ final class MontanaCall: NSObject {
         case "call-resume":
             guard from == peer else { return }
             MontanaTrace.mark("call_hold", "peer resumed")
-            DispatchQueue.main.async { CallUIModel.shared.heldByPeer = false }
+            DispatchQueue.main.async { CallUIModel.shared.heldByPeer = false; CallUIModel.shared.rebind("peer resumed") }
         case "call-gone":
             // THE PEER HOLDS NO SUCH CALL (24.09): their phone came back without it — iOS ends an app whose person
             // changes a privacy switch in Settings — and answered our ask for fresh checks with the truth. This side
@@ -4423,6 +4424,11 @@ final class MontanaCall: NSObject {
     private var ladderStep = 0
     private var ladderMovedAt = Date.distantPast
     private var ladderGoodTicks = 0
+    /// THE BOTTOM STEP IS NOT A GRAVE (OZ 1, the author's word 24670, part 4): at the bottom no picture is sent, so no report
+    /// of mine can ever prove the channel clean again -- the step held the call without video to its end. A probe rises one
+    /// step after this many seconds; a probe the squeeze takes back doubles the wait (up to two minutes), a clean rise resets it.
+    private static let probeFirst: TimeInterval = 20
+    private var probeAfter: TimeInterval = MontanaCall.probeFirst
     /// THE POWER FLOOR (the author's word 10.09): the battery, the charger, Low Power Mode and the
     /// thermal state are read with every ladder tick (MontanaPower, the one source); while the
     /// phone is under power pressure the ladder may not rise above the floor, and the encoder
@@ -4729,6 +4735,16 @@ final class MontanaCall: NSObject {
         let light = squeezed ? 0 : (ladderStep > ladderFloor ? 1 : 2)
         DispatchQueue.main.async { if CallUIModel.shared.signal != light { CallUIModel.shared.signal = light } }
         let since = Date().timeIntervalSince(ladderMovedAt)
+        if !squeezed, ladderStep == Self.videoLadder.count - 1, ladderStep > ladderFloor, since > probeAfter {
+            ladderStep -= 1
+            ladderMovedAt = Date()
+            ladderGoodTicks = 0
+            probeAfter = min(probeAfter * 2, 120)
+            let cap = Self.videoLadder[ladderStep]
+            setVideoCeiling(cap)
+            MontanaTrace.mark("call_ladder", "probe step=\(ladderStep) cap_kbps=\(cap / 1000) rtt=\(rttMs) next_probe_s=\(Int(probeAfter))")
+            return
+        }
         if squeezed {
             ladderGoodTicks = 0
             guard since > 8, ladderStep < Self.videoLadder.count - 1 else { return }
@@ -4759,6 +4775,7 @@ final class MontanaCall: NSObject {
             ladderGoodTicks = 0
             let cap = Self.videoLadder[ladderStep]
             setVideoCeiling(cap)
+            probeAfter = Self.probeFirst   // a clean rise proves the channel: the next bottom probes soon again
             MontanaTrace.mark("call_ladder", "up step=\(ladderStep) cap_kbps=\(cap / 1000) rtt=\(rttMs)")
         }
     }
@@ -4913,7 +4930,8 @@ final class MontanaCall: NSObject {
             var aBytes = 0, aLost = 0, aJitMs = -1
             var vBytes = 0, vLost = 0, vW = 0, vH = 0, vFps = 0
             var pictureNow: [String: Int] = [:]   // each incoming video stream's frames (its bytes without a frame count)
-            var outBytes = 0, outFrames = 0, outLimit = "-"
+            var outBytes = 0, outFrames = 0, outLimit = "-", outId = ""
+            var outLostBy: [String: Int] = [:]   // the peer's reports on my video streams: packets of mine it lost, by my stream
             var captureDurations: [Double] = [], playoutDurations: [Double] = []
             #if !MONTANA_MESSENGER   // the TimeChain is the Protocol's alone (OZ 1, the author's word 24154)
             var voice: [(id: String, seconds: Double, energy: Double, received: Double, concealed: Double)] = []   // the far voice (MTWeave)
@@ -4960,6 +4978,7 @@ final class MontanaCall: NSObject {
                         let b = Int((s.values["bytesSent"] as? NSNumber)?.intValue ?? 0)
                         if b >= outBytes {
                             outBytes = b
+                            outId = s.id
                             outFrames = Int((s.values["framesSent"] as? NSNumber)?.intValue ?? 0)
                             outLimit = (s.values["qualityLimitationReason"] as? String) ?? "-"
                         }
@@ -4975,6 +4994,13 @@ final class MontanaCall: NSObject {
                         tun = MontanaCall.ridesTunnel(s) ? 1 : 0
                         #endif
                         net = (s.values["networkType"] as? String) ?? "?"
+                    }
+                case "remote-inbound-rtp":
+                    // THE PEER'S WORD ON MY PICTURE (OZ 1, the author's word 24670, the law of one witness, part 4): what the far
+                    // side received of the video I send -- the one witness of my own direction.
+                    let media = (s.values["mediaType"] as? String) ?? (s.values["kind"] as? String) ?? ""
+                    if media == "video", let mine = s.values["localId"] as? String {
+                        outLostBy[mine] = Int((s.values["packetsLost"] as? NSNumber)?.intValue ?? 0)
                     }
                 case "inbound-rtp":
                     let media = (s.values["mediaType"] as? String) ?? (s.values["kind"] as? String) ?? ""
@@ -5106,11 +5132,16 @@ final class MontanaCall: NSObject {
             if self.isVideo {
                 // OUTGOING VIDEO IS MEASURED TOO: without it "zero bytes" cannot be split into "we
                 // do not send" and "it does not reach us" -- both sides spoke of the same zero.
-                MontanaTrace.mark("call_video", "path=\(kind) rtt_ms=\(rttMs) in_bytes=\(vBytes) lost=\(vLost) size=\(vW)x\(vH) fps=\(vFps) out_bytes=\(outBytes) out_frames=\(outFrames) limit=\(outLimit) cam_frames=\(self.frameCounter?.frames ?? 0) via=\(via)")
+                MontanaTrace.mark("call_video", "path=\(kind) rtt_ms=\(rttMs) in_bytes=\(vBytes) lost=\(vLost) out_lost=\(outLostBy[outId] ?? -1) size=\(vW)x\(vH) fps=\(vFps) out_bytes=\(outBytes) out_frames=\(outFrames) limit=\(outLimit) cam_frames=\(self.frameCounter?.frames ?? 0) via=\(via)")
                 // 12.9: the same sample that speaks in the journal also moves the ladder — one
                 // measurement, one owner, no second loop to drift ([C-1]).
-                let lostDelta = max(0, vLost - self.lastVideoLost)
-                self.lastVideoLost = vLost
+                // THE CEILING OF MY PICTURE LISTENS TO THE WITNESS OF MY DIRECTION (OZ 1, the author's word 24670, part 4): the
+                // losses that move it are the peer's report on my live stream (remote-inbound-rtp), never the losses of the
+                // peer's stream to me. iPhone 15 18.11 16:49:25Z: T1 on cellular lost its own stream's packets, the iPhone read
+                // them as its own squeeze, stepped down to the bottom and sent no frame for the rest of the call.
+                let outLost = outLostBy[outId] ?? 0
+                let lostDelta = max(0, outLost - self.lastVideoLost)
+                self.lastVideoLost = outLost
                 DispatchQueue.main.async { self.applyLadder(limit: outLimit, lostDelta: lostDelta, rttMs: rttMs) }
             }
             }
@@ -5621,12 +5652,14 @@ final class MontanaCall: NSObject {
             self.autoSpeakerOnVideo()
             self.protectVoice()   // 12.9: the voice takes its share before anything competes for the channel
             self.ladderStep = self.ladderFloor; self.ladderMovedAt = Date(); self.ladderGoodTicks = 0; self.lastVideoLost = 0
+            self.probeAfter = Self.probeFirst
             CallUIModel.shared.signal = 2; CallUIModel.shared.powerSaving = false
             self.lastInBytes = 0; self.stallSamples = 0; self.everFlowed = false; self.lastJournalAt = .distantPast
             self.pathSeen = [:]; self.pictureStallSamples = 0
             self.holdOnDisk(force: true)   // the call stood connected: a run that comes back goes into it
         }
         if s == "connected" {
+            CallUIModel.shared.rebind("connected from=\(first ? "birth" : "return")")
             MTScreenShare.shared.onStart = { [weak self] in self?.startScreenShare() }
             MTScreenShare.shared.onFrame = { [weak self] pb, orient, pts in self?.pushScreenFrame(pb, orientation: orient, ptsNs: pts) }
             MTScreenShare.shared.onStop = { [weak self] in DispatchQueue.main.async { self?.stopScreenShare() } }
@@ -6761,6 +6794,16 @@ final class CallUIModel: ObservableObject {
         MontanaTrace.mark("call_chrome", "fold armed in=\(Int(Self.chromeFoldS))s why=\(why)")
     }
     @Published var tick: Int = 0 { didSet { applySides("track") } }
+    /// THE PICTURE IS BOUND ANEW AT EVERY CHANGE OF THE TRANSPORT (OZ 1, the author's word 24670, the law of one witness,
+    /// part 4): a restart of the path, a hold given back and a share switched keep the same track object, so the surface,
+    /// which rebound only when the track changed, stayed on a dead binding -- iPhone 15 18.11 18:21:08Z: frames decoded,
+    /// the screen black. Every such change raises the generation; each surface rebinds its renderer once per generation.
+    @Published private(set) var surfaceGen = 0
+    func rebind(_ why: String) {
+        dispatchPrecondition(condition: .onQueue(.main))
+        surfaceGen += 1
+        MontanaTrace.mark("call_surface", "rebind gen=\(surfaceGen) why=\(why)")
+    }
     /// THE SIDES OF THE CALL SCREEN HAVE ONE OWNER (23.09): which picture fills the screen and which rides
     /// the corner is decided here -- from the peer's picture, the tap and the peer's share -- and written in
     /// the diary with its reason. The slots read it themselves (MTCallSurface, MTCallMini). A parent's
@@ -7200,7 +7243,7 @@ struct VideoView: UIViewRepresentable {
         side == .local ? MontanaCall.shared.localVideoTrack : MontanaCall.shared.remoteVideoTrack
     }
 
-    final class Coordinator { weak var track: RTCVideoTrack? }
+    final class Coordinator { weak var track: RTCVideoTrack?; var gen = 0 }
     func makeCoordinator() -> Coordinator { Coordinator() }
 
     /// A FACE FILLS, A SCREEN FITS (the author's word 21.09: the tablet's share came in cut): a
@@ -7217,6 +7260,7 @@ struct VideoView: UIViewRepresentable {
         // view under it claims the touch (the gif's lesson, P-131).
         v.isUserInteractionEnabled = false
         if let t = track { t.add(v); context.coordinator.track = t }
+        context.coordinator.gen = model.surfaceGen
         MontanaTrace.mark("call_surface", "born side=\(side == .local ? "local" : "remote") track=\(track == nil ? 0 : 1)")
         return v
     }
@@ -7226,10 +7270,13 @@ struct VideoView: UIViewRepresentable {
             MontanaTrace.mark("call_surface", "mode=\(contentMode == .scaleAspectFit ? "fit" : "fill") side=\(side == .local ? "local" : "remote")")
         }
         let t = track
-        if context.coordinator.track !== t {          // the track changed — reattach exactly once
+        let gen = model.surfaceGen
+        // the track changed, or the transport under it did (surfaceGen) -- reattach exactly once
+        if context.coordinator.track !== t || context.coordinator.gen != gen {
+            let why = context.coordinator.track !== t ? "track" : "transport"
             context.coordinator.track?.remove(v)
-            t?.add(v); context.coordinator.track = t
-            MontanaTrace.mark("call_surface", "side=\(side == .local ? "local" : "remote") track=\(t == nil ? 0 : 1)")
+            t?.add(v); context.coordinator.track = t; context.coordinator.gen = gen
+            MontanaTrace.mark("call_surface", "side=\(side == .local ? "local" : "remote") track=\(t == nil ? 0 : 1) why=\(why) gen=\(gen)")
         }
     }
     static func dismantleUIView(_ v: RTCMTLVideoView, coordinator: Coordinator) {

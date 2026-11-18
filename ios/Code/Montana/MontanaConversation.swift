@@ -2282,7 +2282,7 @@ struct ChatConversationView: View {
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { ui.openChat(target) }
                 }
             case .forwardMany(let ms):
-                ForwardPickerView(message: ms.first ?? Message(text: "", isFromMe: true, time: "")) { target in
+                ForwardPickerView(message: ms.first ?? Message(text: "", isFromMe: true)) { target in
                     for m in ms { forwardMessage(m, to: target) }
                     sheet = nil
                     selectingMsgs = false; selectedMsgs.removeAll()
@@ -3559,12 +3559,12 @@ struct ChatConversationView: View {
             let qt: String? = (i == 0 && !quote.isEmpty) ? quote : nil   // the plate rides with the first picture
             let reply: MID? = qt == nil ? nil : answered?.id
             var row = item.isFile
-                ? Message(text: cap, isFromMe: true, time: nowHHMM(), replyText: qt, docFile: item.name,
+                ? Message(text: cap, isFromMe: true, replyText: qt, docFile: item.name,
                           docName: docName, deliveryStatus: .sending, senderRef: nil, replyToId: reply)
                 : item.video
-                ? Message(text: cap, isFromMe: true, time: nowHHMM(), replyText: qt, videoFile: item.name,
+                ? Message(text: cap, isFromMe: true, replyText: qt, videoFile: item.name,
                           deliveryStatus: .sending, senderRef: nil, replyToId: reply)
-                : Message(text: cap, isFromMe: true, time: nowHHMM(), replyText: qt, imageFile: item.name,
+                : Message(text: cap, isFromMe: true, replyText: qt, imageFile: item.name,
                           docName: docName, deliveryStatus: .sending, senderRef: nil, replyToId: reply)
             if let slot = slots[i] {
                 row.groupKey = slot.key; row.groupIndex = slot.index; row.groupCount = slot.count
@@ -3959,8 +3959,7 @@ struct ChatConversationView: View {
             MontanaTrace.mark("send_dup", "note \(stored.prefix(24)) already in the chat — not born twice")
             return
         }
-        store.append(chat.name, Message(text: "", isFromMe: true, time: nowHHMM(),
-                                        videoFile: stored, deliveryStatus: .sending, senderRef: nil))
+        store.append(chat.name, Message(text: "", isFromMe: true, videoFile: stored, deliveryStatus: .sending, senderRef: nil))
         if chat.convId != nil { sendGatedMedia(fileName: stored, kind: "vid") }
         else { store.setMediaStatus(chat.name, file: stored, .sent) }
     }
@@ -4123,7 +4122,7 @@ struct ChatConversationView: View {
 
     func sendAsset(_ asset: PHAsset, caption: String = "", mid: String? = nil,
                    group: (key: String, index: Int, count: Int)? = nil) {
-        let born = mid.flatMap(ChatStore.birthMs(fromMid:)) ?? Date().timeIntervalSince1970
+        let born = mid.flatMap(MTMid.birth) ?? Date().timeIntervalSince1970
         func stamp(_ row: inout Message) {
             if let group { row.groupKey = group.key; row.groupIndex = group.index; row.groupCount = group.count }
         }
@@ -4156,8 +4155,7 @@ struct ChatConversationView: View {
                 let mb = (((try? FileManager.default.attributesOfItem(atPath: attachmentURL(stored).path))?[.size] as? Int) ?? 0) / 1_048_576
                 MontanaTrace.mark("asset_stage", "kind=vid hand_ms=\(handMs) copy_ms=\(copyMs) mb=\(mb)")
                 DispatchQueue.main.async {
-                    var row = Message(text: caption, isFromMe: true, time: nowHHMM(),
-                                      videoFile: stored, deliveryStatus: .sending,
+                    var row = Message(text: caption, isFromMe: true, videoFile: stored, deliveryStatus: .sending,
                                       msgId: mid, senderRef: nil, createdAt: born)
                     stamp(&row)
                     store.append(chat.name, row)
@@ -4172,8 +4170,7 @@ struct ChatConversationView: View {
                 guard let data, let jpeg = MontanaMedia.photoForSend(data),   // the one shape of a photo on its way out
                       let name = saveChatPhotoTmp(jpeg) else { return }
                 DispatchQueue.main.async {
-                    var row = Message(text: caption, isFromMe: true, time: nowHHMM(),
-                                      imageFile: name, deliveryStatus: .sending,
+                    var row = Message(text: caption, isFromMe: true, imageFile: name, deliveryStatus: .sending,
                                       msgId: mid, senderRef: nil, createdAt: born)
                     stamp(&row)
                     store.append(chat.name, row)
@@ -4206,8 +4203,7 @@ struct ChatConversationView: View {
         let mark = book.hasPrefix("stick_") ? "stick_" : "gif_"
         let name = mark + UUID().uuidString + ".gif"
         guard MontanaMediaStore.put(name, data: data) else { return }
-        _ = store.append(chat.name, Message(text: "", isFromMe: true, time: nowHHMM(),
-                                            docFile: name, docName: name,
+        _ = store.append(chat.name, Message(text: "", isFromMe: true, docFile: name, docName: name,
                                             deliveryStatus: .sending, senderRef: nil))
         sendGatedMedia(fileName: name, kind: "doc", docName: name)
         MontanaTrace.mark("gif_send", "bytes=\(data.count)")
@@ -4222,8 +4218,7 @@ struct ChatConversationView: View {
         let name = "gif_" + UUID().uuidString + ".gif"
         let light = MontanaGifArt.light(f)
         if let light { _ = MontanaMediaStore.put(name, data: light) }
-        _ = store.append(chat.name, Message(text: "", isFromMe: true, time: nowHHMM(),
-                                            docFile: name, docName: name,
+        _ = store.append(chat.name, Message(text: "", isFromMe: true, docFile: name, docName: name,
                                             deliveryStatus: .sending, senderRef: nil))
         MontanaTrace.mark("gif_send", "row at the tap light=\(light?.count ?? 0)")
         Task {
@@ -4262,8 +4257,7 @@ struct ChatConversationView: View {
         replyingTo = nil
         let quote = answered.map { ChatStore.listPreview($0) } ?? ""
         let quoteMid = answered?.msgId.map { MTMid.bare($0) } ?? ""
-        _ = store.append(chat.name, Message(text: "", isFromMe: true, time: nowHHMM(),
-                                            replyText: quote.isEmpty ? nil : quote,
+        _ = store.append(chat.name, Message(text: "", isFromMe: true, replyText: quote.isEmpty ? nil : quote,
                                             imageFile: name,
                                             docName: MontanaStickerBook.docName, deliveryStatus: .sending,
                                             senderRef: nil, replyToId: answered?.id))
@@ -4281,8 +4275,7 @@ struct ChatConversationView: View {
     func sendCameraImage(_ img: UIImage) {
         if let jpeg = img.avatarResized(1200).jpegData(compressionQuality: 0.85),
            let name = saveChatPhotoTmp(jpeg) {
-            store.append(chat.name, Message(text: "", isFromMe: true, time: nowHHMM(),
-                                            imageFile: name, deliveryStatus: .sending,
+            store.append(chat.name, Message(text: "", isFromMe: true, imageFile: name, deliveryStatus: .sending,
                                             senderRef: nil))
             sendGatedMedia(fileName: name, kind: "img")
         }
@@ -4291,8 +4284,7 @@ struct ChatConversationView: View {
     // video taken by the camera → video message
     func sendCameraVideo(_ url: URL) {
         if let (stored, _) = copyToDocs(from: url, original: url.lastPathComponent) {
-            store.append(chat.name, Message(text: "", isFromMe: true, time: nowHHMM(),
-                                            videoFile: stored, deliveryStatus: .sending,
+            store.append(chat.name, Message(text: "", isFromMe: true, videoFile: stored, deliveryStatus: .sending,
                                             senderRef: nil))
             sendGatedMedia(fileName: stored, kind: "vid")
         }
@@ -4322,8 +4314,7 @@ struct ChatConversationView: View {
         // the row's name: the first frame draws the bars, and the manifest carries this same shape.
         if let w = MTWaveform.compute(voiceFileURL(file), bars: MTWaveform.bars) { MTWaveform.remember(localName, w) }
         try? FileManager.default.removeItem(at: voiceFileURL(file))         // remove the original recording
-        store.append(chat.name, Message(text: "", isFromMe: true, time: nowHHMM(),
-                                        audioFile: localName, audioDuration: dur,
+        store.append(chat.name, Message(text: "", isFromMe: true, audioFile: localName, audioDuration: dur,
                                         deliveryStatus: .sending, senderRef: nil))
         // UNIFIED media path: vault + chunked-blob + honest status — like photo/video/file
         if chat.convId != nil {
@@ -4446,8 +4437,7 @@ struct ChatConversationView: View {
             store.noteForwardSource(chat: target.name, id: sent.id, from: chat.name)
             return
         }
-        let row = Message(text: m.text, isFromMe: true, time: nowHHMM(),
-                          replyText: isChannel ? fwdQuote : nil,   // this phone's row names the channel (the media's wire says «fw» alone)
+        let row = Message(text: m.text, isFromMe: true, replyText: isChannel ? fwdQuote : nil,   // this phone's row names the channel (the media's wire says «fw» alone)
                           imageFile: kind == "img" ? f : nil, videoFile: kind == "vid" ? f : nil,
                           audioFile: kind == "aud" ? f : nil, audioDuration: m.audioDuration,
                           docFile: kind == "doc" ? f : nil, docName: m.docName,

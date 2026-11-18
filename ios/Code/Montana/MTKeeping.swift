@@ -1282,7 +1282,7 @@ enum MTKeepDerive {
                       let rec = try? JSONDecoder().decode(ArchivedMedia.self, from: Data(md.dropFirst(mediaMark.count).utf8)),
                       ["img", "vid", "aud", "doc"].contains(rec.k) else { return nil }
                 let name = store.mediaFileName(kind: rec.k, ext: (rec.f as NSString).pathExtension, seed: wire)
-                return Message(text: rec.cap ?? "", isFromMe: false, time: hhmm(at: t), isRead: true,
+                return Message(text: rec.cap ?? "", isFromMe: false, isRead: true,
                                imageFile: rec.k == "img" ? name : nil, videoFile: rec.k == "vid" ? name : nil,
                                audioFile: rec.k == "aud" ? name : nil, audioDuration: rec.d ?? 0,
                                docFile: rec.k == "doc" ? name : nil, docName: rec.n,
@@ -1299,7 +1299,7 @@ enum MTKeepDerive {
                 }
             }
             let mid = MTRestoredMid.given + (wire ?? String(t))
-            return Message(text: x, isFromMe: claimedMine, time: hhmm(at: t), isRead: true, deliveryStatus: claimedMine ? .sent : .read, msgId: mid, createdAt: t)
+            return Message(text: x, isFromMe: claimedMine, isRead: true, deliveryStatus: claimedMine ? .sent : .read, msgId: mid, createdAt: t)
         }
         let laid = store.layGivenBack(conv, rows)
         noteBack(conv, nil)

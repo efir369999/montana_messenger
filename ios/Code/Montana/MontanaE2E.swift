@@ -1890,7 +1890,7 @@ final class NodeChannel: MessagingChannel {
         MontanaDeliveryEngine.shared.enqueue(to: chatId, chat: chatId, mid: mid, text: text, silent: silent)
         let sentId = mid
         // Do not mark .sent if nothing was sent (bundle check failure/no target): [C-2.1] — no silent failure.
-        return Message(text: text, isFromMe: true, time: nowHHMM(), deliveryStatus: .sending,
+        return Message(text: text, isFromMe: true, deliveryStatus: .sending,
                        msgId: sentId, senderRef: nil)
     }
     func subscribe(chatId: String, onNew: @escaping (Message) -> Void) {}

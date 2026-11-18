@@ -1223,7 +1223,7 @@ struct ChatsListView: View {
                             onSend: { text in
                                 store.seedIfNeeded(s.name)
                                 store.append(s.name, Message(text: text, isFromMe: true,
-                                                             time: nowHHMM(), replyText: "📷 Story",
+                                                             replyText: "📷 Story",
                                                              senderRef: nil))
                                 // reply/reaction to a story → automatically create a chat with the author
                                 ensureChatForStory(s, lastText: text)

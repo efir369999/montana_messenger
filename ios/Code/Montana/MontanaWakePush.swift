@@ -1507,7 +1507,7 @@ enum MontanaWakePush {
         m = m.filter { e in
             if e.key == mid { return true }
             if let alive { return alive.contains(e.key) }
-            return ChatStore.birthMs(fromMid: e.key).map { b in now - b < term } ?? true
+            return MTMid.birth(e.key).map { b in now - b < term } ?? true
         }
         if let d = try? JSONEncoder().encode(m) { _ = MontanaLocalVault.setEncrypted(longRefsKey, d) }
     }
@@ -2434,7 +2434,7 @@ enum MontanaWakePush {
     private static func saveLedger(_ m: [String: [String]]) {
         let alive = MontanaDeliveryEngine.shared.queuedMids() ?? []
         let now = Date().timeIntervalSince1970, term = letterReturns
-        let past: (String) -> Bool = { l in !alive.contains(l) && (ChatStore.birthMs(fromMid: l).map { b in term < now - b } ?? false) }
+        let past: (String) -> Bool = { l in !alive.contains(l) && (MTMid.birth(l).map { b in term < now - b } ?? false) }
         var kept: [String: [String]] = [:]
         for (b, letters) in m {
             let rest = letters.filter { l in !past(l) }

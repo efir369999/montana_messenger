@@ -548,6 +548,36 @@ enum MTMid {
     static func bare(_ name: String) -> String { name.hasPrefix("mid:") ? String(name.dropFirst(4)) : name }
     /// A row's letter name on the wire, or none for a row that never rode one (a local id).
     static func wire(_ name: String) -> String? { name.hasPrefix("mid:") ? bare(name) : nil }
+    /// The birth millisecond a letter's name carries («t» + ms + «-» + a UUID, ChatStore.mintMid), in seconds; nil for an old
+    /// name that carries none. ONE OWNER FOR EVERY PROCESS (OZ 1, the author's word 24670, the law of one witness, part 1): the
+    /// app, the notification extension and the Share sheet all compile this file, so the birth is read by one rule everywhere.
+    static func birth(_ name: String) -> Double? {
+        let core = bare(name)
+        guard core.hasPrefix("t"), let dash = core.firstIndex(of: "-"),
+              let ms = Int64(core[core.index(after: core.startIndex)..<dash]) else { return nil }
+        return Double(ms) / 1000.0
+    }
+    /// THE MOMENT OF A LETTER, DECIDED IN ONE PLACE. The label a person reads and the place the row
+    /// stands in tell one story ([C-1]), and both come from the letter's OWN moment, never from the
+    /// moment this phone happened to pick it up. Two sources, in order: the birth millisecond in the
+    /// letter's name, and — for a build whose names carry none — the moment the SENDER handed the
+    /// letter to the node (the box keeps it). Only when neither is known does the arrival stand in,
+    /// and then it is the honest best we have. Measured 01.09: two pictures sent at 17:49 from a
+    /// build that stamps no name wore 18:47 — the minute this phone woke and collected them.
+    ///
+    /// A CORRESPONDENT'S BIRTH STANDS NO FURTHER AHEAD THAN THIS PHONE'S CLOCK AND THE TOLERANCE (spec Stage 9 §Ordering, the note
+    /// beside ChatStore.before: «clamp into [..., local receive time + tolerance]; own messages (multi-device echo) are not clamped»;
+    /// the tolerance is the stage's audit closure S9-F2: two minutes; the author's word 11.10.2026 17:1x UTC: «check the whole
+    /// architecture of the chats' time chains, so there are no holes by the constitution»). The name's millisecond is the
+    /// sender's claim, and a claim of a far year stood under every later letter of the chat for good. A letter of my own other
+    /// device keeps its own moment.
+    static let birthTolerance: Double = 120
+    static func moment(_ name: String, sentAt: Double?, own: Bool = false) -> Double {
+        let now = Date().timeIntervalSince1970
+        var claimed = now
+        if let born = birth(name) { claimed = born } else if let sentAt, 0 < sentAt { claimed = sentAt }
+        return own ? claimed : min(claimed, now + birthTolerance)
+    }
 }
 
 enum MTShownOnce {

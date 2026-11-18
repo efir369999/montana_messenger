@@ -863,10 +863,10 @@ final class MTGroup {
     func send(_ text: String, in key: String, replyText: String?, replyToId: MID?, replyWireMid: String?, store: ChatStore) -> Message {
         guard let g = state(key), canWrite(key), Self.carries(text) else {
             MontanaTrace.mark("group_refused", "send -- group=\(state(key) == nil ? 0 : 1) chat=\(String(key.prefix(12)))")
-            return Message(text: "", isFromMe: true, time: nowHHMM(), senderRef: nil)
+            return Message(text: "", isFromMe: true, senderRef: nil)
         }
         let minted = ChatStore.mintMid()
-        let row = Message(text: text, isFromMe: true, time: nowHHMM(), replyText: replyText, deliveryStatus: .sending,
+        let row = Message(text: text, isFromMe: true, replyText: replyText, deliveryStatus: .sending,
                           msgId: "mid:" + minted.mid, senderRef: nil, createdAt: Double(minted.ms) / 1000, replyToId: replyToId)
         store.append(key, row)
         let me = Self.clean(E2E.myDisplayName(), Self.nameLimit)
@@ -1134,7 +1134,7 @@ final class MTGroup {
             commentAt[pace] = now
         }
         let name = Self.clean(w.n ?? "", Self.nameLimit)
-        let born = MontanaDeliveryEngine.letterMoment(mid: "mid:" + id, sentAt: nil)
+        let born = MTMid.moment("mid:" + id, sentAt: nil)
         let fresh = MTChannelComments.shared.put(MTChannelComment(id: id, seat: seat, name: name, text: tx, at: born, mine: false), on: post, in: key)
         if fresh, g.mine {
             spread(MTGroupWord(t: "cm", g: g.id, n: name.isEmpty ? nil : name, id: id, s: seat, tx: tx, qm: post), in: g, except: seat, own: false)
@@ -1344,7 +1344,7 @@ final class MTGroup {
     @MainActor
     func tellRead(_ key: String, store: ChatStore) {
         guard ChatStore.readReceiptsOn, let g = state(key), g.kind == .group, g.left != true,
-              let newest = (store.messages[key] ?? []).compactMap({ r in r.isFromMe ? nil : r.msgId.flatMap(ChatStore.birthMs(fromMid:)) }).max()
+              let newest = (store.messages[key] ?? []).compactMap({ r in r.isFromMe ? nil : r.msgId.flatMap(MTMid.birth) }).max()
         else { return }
         let ms = Int64(newest * 1000)
         guard (readTold[g.id] ?? 0) < ms else { return }
@@ -1368,7 +1368,7 @@ final class MTGroup {
         readSpread[k] = ms
         var speakers = Set<String>()
         for r in store.messages[key] ?? [] {
-            guard let b = r.msgId.flatMap(ChatStore.birthMs(fromMid:)) else { continue }
+            guard let b = r.msgId.flatMap(MTMid.birth) else { continue }
             let born = Int64(b * 1000)
             guard since < born, born <= ms else { continue }
             let seat = r.isFromMe ? g.me : (r.senderRef.flatMap { x in x.hasPrefix(head) ? String(x.dropFirst(head.count)) : nil } ?? "")
@@ -1395,7 +1395,7 @@ final class MTGroup {
         let key = Self.key(of: gid)
         var raised = 0
         for (i, r) in (store.messages[key] ?? []).enumerated() where r.isFromMe {
-            if let b = r.msgId.flatMap(ChatStore.birthMs(fromMid:)), Int64(b * 1000) <= ms, store.advance(key, i, to: .read) { raised += 1 }
+            if let b = r.msgId.flatMap(MTMid.birth), Int64(b * 1000) <= ms, store.advance(key, i, to: .read) { raised += 1 }
         }
         MontanaTrace.mark("read_rx", "group upto=\(MontanaTrace.shortMs(ms)) raised=\(raised)")
     }
@@ -1417,7 +1417,7 @@ final class MTGroup {
     }
     /// THE READERS OF A LETTER OF MINE, BY NAME («N Seen» over the letter's menu): the seats whose mark covers its birth.
     func seenBy(_ m: Message, in key: String) -> [String]? {
-        guard let g = state(key), g.kind == .group, m.isFromMe, let b = m.msgId.flatMap(ChatStore.birthMs(fromMid:)) else { return nil }
+        guard let g = state(key), g.kind == .group, m.isFromMe, let b = m.msgId.flatMap(MTMid.birth) else { return nil }
         let ms = Int64(b * 1000)
         return (g.readBy ?? [:]).filter { e in ms <= e.value }.map { e in speakerName(Self.speaker(g.id, e.key)) }
             .sorted { a, b in a.localizedCaseInsensitiveCompare(b) == .orderedAscending }
@@ -2536,9 +2536,9 @@ final class MTGroup {
         guard store.messages[key]?.contains(where: { r in r.mid == sid }) != true, !store.buried(sid, in: key) else { return }
         let mine = seat == g.me
         stand(g, face: nil, store: store, revive: true)   // a letter
-        let born = MontanaDeliveryEngine.letterMoment(mid: sid, sentAt: nil, own: mine)
+        let born = MTMid.moment(sid, sentAt: nil, own: mine)
         let quote = (w.qt ?? "").isEmpty ? nil : w.qt
-        let row = Message(text: words, isFromMe: mine, time: hhmm(at: born), replyText: quote, deliveryStatus: mine ? .sent : .delivered,
+        let row = Message(text: words, isFromMe: mine, replyText: quote, deliveryStatus: mine ? .sent : .delivered,
                           msgId: sid, senderRef: mine ? nil : Self.speaker(g.id, seat), createdAt: born,
                           replyToId: store.localId(forMid: w.qm, chat: key))
         let landed = store.append(key, row)
@@ -2617,7 +2617,7 @@ final class MTGroup {
         // A RESTORE'S CATCH-UP IS THE PAST (865 a, iPad 11.11: the box handed the restored person an old invitation of a group call
         // never on T1, and a chat was born): an invitation sent before this person came in on this phone births no group -- the
         // groups the person held come back with the archive (groups.held); an invitation sent later is born as before.
-        if MontanaSeed.before(ChatStore.birthMs(fromMid: copy)) {
+        if MontanaSeed.before(MTMid.birth(copy)) {
             MontanaTrace.mark("group_refused", "invitation older than this person's coming in")
             return .refused
         }
@@ -2694,10 +2694,10 @@ final class MTGroup {
             guard paceSlow(g, seat: seat) else { return .wait }
         }
         stand(g, face: nil, store: store, revive: true)   // a letter
-        let born = MontanaDeliveryEngine.letterMoment(mid: sid, sentAt: nil)
+        let born = MTMid.moment(sid, sentAt: nil)
         let quote = (w.qt ?? "").isEmpty ? nil : w.qt
-        let past = MontanaSeed.before(ChatStore.birthMs(fromMid: sid))   // a restore's catch-up (865 a): silent here and on its way on
-        let row = Message(text: words, isFromMe: false, time: hhmm(at: born), replyText: quote, deliveryStatus: .delivered,
+        let past = MontanaSeed.before(MTMid.birth(sid))   // a restore's catch-up (865 a): silent here and on its way on
+        let row = Message(text: words, isFromMe: false, replyText: quote, deliveryStatus: .delivered,
                           msgId: sid, senderRef: Self.speaker(g.id, seat), createdAt: born,
                           replyToId: store.localId(forMid: w.qm, chat: key))
         let landed = store.append(key, row)
@@ -2798,7 +2798,7 @@ final class MTGroup {
             MontanaTrace.mark("kept_file", mid: id, "a copy of my letter for no row of mine this phone asked by -- not taken")
             return .held
         }
-        store.reconstructMedia(key, body: body, isFromMe: false, time: row.time, msgId: sid, senderRef: nil)
+        store.reconstructMedia(key, body: body, isFromMe: false, msgId: sid, senderRef: nil)
         MontanaTrace.mark("kept_file", mid: id, "my restored group row takes my letter's copy")
         return .held
     }
@@ -2812,7 +2812,7 @@ final class MTGroup {
         let key = Self.key(of: g.id)
         if !MontanaMediaStore.exists(file) {
             MontanaTrace.mark("rx_refill", mid: id, "a group row stands without its file -- the new cargo is taken")
-            store.reconstructMedia(key, body: String(words.dropFirst(mediaMark.count)), isFromMe: false, time: row.time,
+            store.reconstructMedia(key, body: String(words.dropFirst(mediaMark.count)), isFromMe: false,
                                    msgId: row.msgId, senderRef: row.senderRef)
         }
         guard g.mine, store.mayAskKeptFile("carry:" + id) else { return }
@@ -2836,7 +2836,7 @@ final class MTGroup {
         let sid = "mid:" + id
         guard let row = store.messages[key]?.first(where: { r in r.mid == sid }) else {
             if store.buried(sid, in: key) { return .held }   // the letter is gone here already
-            let born = MontanaDeliveryEngine.letterMoment(mid: sid, sentAt: nil)
+            let born = MTMid.moment(sid, sentAt: nil)
             return Date().timeIntervalSince1970 - born < Self.cardWait ? .wait : .refused
         }
         guard !row.isFromMe, Self.author(row, in: g) == seat,
@@ -2929,8 +2929,8 @@ final class MTGroup {
         }
         answersHeard.append(id)
         if 512 < answersHeard.count { answersHeard.removeFirst(answersHeard.count - 512) }
-        let born = MontanaDeliveryEngine.letterMoment(mid: "mid:" + id, sentAt: nil)
-        store.append(key, Message(text: words, isFromMe: false, time: "", msgId: "mid:" + id, senderRef: Self.speaker(g.id, seat), createdAt: born))
+        let born = MTMid.moment("mid:" + id, sentAt: nil)
+        store.append(key, Message(text: words, isFromMe: false, msgId: "mid:" + id, senderRef: Self.speaker(g.id, seat), createdAt: born))
         // the service row of a pin: «X pinned "..."», laid on this phone under the pinned letter's own words
         if words.hasPrefix(pinMark), let o = Self.json(String(words.dropFirst(pinMark.count))), (o["op"] as? String) == "pin",
            let sid = o["sid"] as? String, let row = store.messages[key]?.first(where: { r in r.msgId == sid }) {
@@ -2994,7 +2994,7 @@ final class MTGroup {
                                  copy: copy)
         if g.mine {
             var on = MTGroupWord(t: "room", g: g.id, k: g.kind.rawValue, ti: g.title, n: w.n, id: id, s: seat, tx: words)
-            if MontanaSeed.before(ChatStore.birthMs(fromMid: id)) { on.hs = 1 }   // a restore's catch-up rings nobody (865 a)
+            if MontanaSeed.before(MTMid.birth(id)) { on.hs = 1 }   // a restore's catch-up rings nobody (865 a)
             if let ts = w.ts, ts.count <= 32 {
                 // a targeted word: to the seats it names alone -- ringing there if it is an invitation (a word naming no ring is one)
                 let ring = w.rg == 1 || w.rg == nil

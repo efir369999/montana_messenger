@@ -3776,7 +3776,12 @@ struct Message: Identifiable, Codable {
     var legacyReplyTo: String? = nil   // read from an old history only: a quote by that old UUID
     var text: String
     let isFromMe: Bool
-    let time: String
+    /// THE ROW'S CLOCK IS ITS BIRTH, ONE OWNER (constitution 15; OZ 1, the author's word 24670, the law of one witness, part 1:
+    /// «the birth time rides with the letter; the row is set everywhere by the envelope's born»). The face of the time used to be a
+    /// second field written by each caller from the clock of the moment it ran (nowHHMM): T1 18.11 01:51:59Z, a link shared at 04:42
+    /// from another app was taken by the app nine minutes later and wore 04:51, so the correspondent's reply of 04:43 stood above
+    /// it. The face is read from createdAt now, and nothing else can write it.
+    var time: String { hhmm(at: createdAt) }
     var reactions: [String] = []     // emoji reactions under the message (multiple allowed)
     // WHOSE REACTION IS WHOSE. The wire says only "add this emoji" / "drop this emoji", as it
     // always has, and old builds keep speaking it unchanged. These two live on this device only,
@@ -3862,16 +3867,17 @@ struct Message: Identifiable, Codable {
         return (a.file, a.kind == "vid")
     }
 
-    init(text: String, isFromMe: Bool, time: String, reactions: [String] = [],
+    init(text: String, isFromMe: Bool, reactions: [String] = [],
          replyText: String? = nil, isRead: Bool = false, imageFile: String? = nil,
          videoFile: String? = nil, audioFile: String? = nil, audioDuration: Double = 0,
          docFile: String? = nil, docName: String? = nil,
          deliveryStatus: DeliveryStatus = .sent, edited: Bool = false,
          msgId: String? = nil, senderRef: String? = nil,
-         createdAt: Double = Date().timeIntervalSince1970, replyToId: MID? = nil, transport: String? = nil,
+         createdAt: Double? = nil, replyToId: MID? = nil, transport: String? = nil,
          fwdFrom: String? = nil, forwarded: Bool = false) {
-        self.mid = msgId ?? ("mid:" + ChatStore.mintMid().mid)
-        self.text = text; self.isFromMe = isFromMe; self.time = time
+        let name = msgId ?? ("mid:" + ChatStore.mintMid().mid)
+        self.mid = name
+        self.text = text; self.isFromMe = isFromMe
         self.reactions = reactions; self.replyText = replyText
         self.isRead = isRead; self.imageFile = imageFile
         self.videoFile = videoFile
@@ -3879,7 +3885,9 @@ struct Message: Identifiable, Codable {
         self.docFile = docFile; self.docName = docName
         self.deliveryStatus = deliveryStatus; self.edited = edited
         self.senderRef = senderRef
-        self.createdAt = createdAt
+        // A moment not given is the letter's own birth, read from its name through the one door that clamps a correspondent's
+        // claim (MTMid.moment); a name minted here was born now.
+        self.createdAt = createdAt ?? MTMid.moment(name, sentAt: nil, own: isFromMe)
         self.replyToId = replyToId
         self.transport = transport
         self.fwdFrom = fwdFrom
@@ -3904,7 +3912,6 @@ struct Message: Identifiable, Codable {
         legacyId = (try? c.decode(UUID.self, forKey: .id))?.uuidString
         text = (try? c.decode(String.self, forKey: .text)) ?? ""
         isFromMe = (try? c.decode(Bool.self, forKey: .isFromMe)) ?? false
-        time = (try? c.decode(String.self, forKey: .time)) ?? ""
         reactions = (try? c.decode([String].self, forKey: .reactions)) ?? []
         replyText = try? c.decode(String.self, forKey: .replyText)
         isRead = (try? c.decode(Bool.self, forKey: .isRead)) ?? false

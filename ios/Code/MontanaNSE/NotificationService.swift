@@ -811,7 +811,10 @@ final class NotificationService: UNNotificationServiceExtension {
         if let od = MontanaKeychain.get("chatListOverlay"),
            let m = try? JSONDecoder().decode([String: [String: String]].self, from: od) { ov = m }
         let fmt = DateFormatter(); fmt.dateFormat = "HH:mm"
-        var rec = ["p": MTRowLetter.preview(text), "t": fmt.string(from: Date())]
+        // THE RECORD WEARS THE LETTER'S BIRTH, NOT THIS DOOR'S CLOCK (OZ 1, the author's word 24670, the law of one witness, part
+        // 1): the moment is read by the one owner every process compiles (MTMid.moment), the same the app's rows read.
+        let born = MTMid.moment(mid, sentAt: 0 < sentAt ? sentAt : nil)
+        var rec = ["p": MTRowLetter.preview(text), "t": fmt.string(from: Date(timeIntervalSince1970: born))]
         if let k = MTRowLetter.mediaKind(letter: text) { rec["k"] = k }   // the row's thumbnail kind (a voice's orb, a note's poster); the file comes with the app's door
         rec["id"] = mid
         // The cold frame shows the BOOK'S word (21.09): the envelope's only when the book holds none.
@@ -822,11 +825,11 @@ final class NotificationService: UNNotificationServiceExtension {
         // TEXT; the ORDER and the COUNT were left to the ordinary door, so a person tapping a
         // notification met yesterday's order and yesterday's counters until the drain caught up (the
         // author's word 29.08: «came back» — it had never been closed, only its visible third). «at»
-        // is when this letter landed (the order stamp), «u» is how many letters this door has
-        // delivered and the app has not yet taken through the ordinary door. The moment this letter
-        // landed, in the unit the app keeps the order in.
-        rec["at"] = String(Int(Date().timeIntervalSince1970))
-        rec["atm"] = String(Int(Date().timeIntervalSince1970 * 1000))
+        // is the letter's birth (the order stamp), «u» is how many letters this door has
+        // delivered and the app has not yet taken through the ordinary door. The letter's birth, in the
+        // unit the app keeps the order in.
+        rec["at"] = String(Int(born))
+        rec["atm"] = String(Int(born * 1000))
         rec["u"] = String((Int(ov[conv]?["u"] ?? "0") ?? 0) + 1)
         ov[conv] = rec
         if let od = try? JSONEncoder().encode(ov) { MontanaKeychain.set("chatListOverlay", od) }
@@ -954,9 +957,15 @@ final class NotificationService: UNNotificationServiceExtension {
     /// over). Returns the last stored letter — the banner carries IT when the push's own
     /// envelope did not open: an empty «arrived, yet nothing» banner is forbidden by construction.
     private static func fetchBoxSync(deadline: Date) -> (conv: String, mid: String, text: String, name: String, glyph: String)? {
-        guard let baseD = MontanaKeychain.get("wakeBase"), let baseS = String(data: baseD, encoding: .utf8),
-              let refD = MontanaKeychain.get("wakeMyAddr"), let ref = String(data: refD, encoding: .utf8),
-              !ref.isEmpty, let url = URL(string: baseS + "/fetch") else { return nil }   // SERVER-DEBT-ACK: the accelerator node (rung 4)
+        // EVERY DOOR THE APP JUDGED, NOT ONE (OZ 1, the author's word 24670, the law of one witness, part 3: «one table of live doors,
+        // read by media, the box walk and calls; a door that does not answer is passed, not waited for»). The walk read the one door
+        // «wakeBase» and stopped whole at its first refused page -- T1 18.11.2026 19:09:58Z: «box: page refused -- walk stopped»
+        // three times, and the iPhone 15's letter lay on a living node until the app was restarted. The doors are the app's own
+        // judged list (MTNodeWire.mirroredDoors, its one owner for every process), walked in its order.
+        guard let refD = MontanaKeychain.get("wakeMyAddr"), let ref = String(data: refD, encoding: .utf8), !ref.isEmpty else { return nil }
+        let doors = MTNodeWire.mirroredDoors().compactMap { URL(string: $0 + "/fetch") }   // SERVER-DEBT-ACK: the accelerator node (rung 4)
+        guard !doors.isEmpty else { return nil }
+        var door = 0
         let secrets = MTPipeKey.mirrored()
         guard !secrets.isEmpty else { return nil }
         var secretOf: [String: MTPipeKey] = [:]; var rdvLabels = Set<String>()
@@ -992,23 +1001,28 @@ final class NotificationService: UNNotificationServiceExtension {
             if Date() >= deadline { diagLine("box: deadline — walk stopped"); break }
             let end = min(start + 128, subs.count)
             for _ in 0..<2 {   // extension budget: at most two pages of 128 letters
-                var req = URLRequest(url: url); req.httpMethod = "POST"
-                req.setValue("application/json", forHTTPHeaderField: "content-type")
-                req.httpBody = try? JSONSerialization.data(withJSONObject:
-                    ["subs": Array(subs[start..<end]), "sids": Array(sids[start..<end])])
-                let sem = DispatchSemaphore(value: 0)
                 var letters: [[String: Any]] = []
                 var pageOk = false
-                URLSession.shared.dataTask(with: req) { d, resp, _ in
-                    defer { sem.signal() }
-                    guard let d, (resp as? HTTPURLResponse)?.statusCode == 200,
-                          let o = try? JSONSerialization.jsonObject(with: d) as? [String: Any],
-                          let ls = o["letters"] as? [[String: Any]] else { return }
-                    pageOk = true
-                    letters = ls
-                }.resume()
-                _ = sem.wait(timeout: .now() + min(3, max(0.5, deadline.timeIntervalSinceNow)))
-                if !pageOk { diagLine("box: page refused — walk stopped"); return last }
+                while door < doors.count, Date() < deadline {
+                    var req = URLRequest(url: doors[door]); req.httpMethod = "POST"
+                    req.setValue("application/json", forHTTPHeaderField: "content-type")
+                    req.httpBody = try? JSONSerialization.data(withJSONObject:
+                        ["subs": Array(subs[start..<end]), "sids": Array(sids[start..<end])])
+                    let sem = DispatchSemaphore(value: 0)
+                    URLSession.shared.dataTask(with: req) { d, resp, _ in
+                        defer { sem.signal() }
+                        guard let d, (resp as? HTTPURLResponse)?.statusCode == 200,
+                              let o = try? JSONSerialization.jsonObject(with: d) as? [String: Any],
+                              let ls = o["letters"] as? [[String: Any]] else { return }
+                        pageOk = true
+                        letters = ls
+                    }.resume()
+                    _ = sem.wait(timeout: .now() + min(3, max(0.5, deadline.timeIntervalSinceNow)))
+                    if pageOk { break }
+                    diagLine("box: door \(door + 1)/\(doors.count) refused the page — the next door")
+                    door += 1
+                }
+                if !pageOk { diagLine("box: every door refused the page — walk stopped"); return last }
                 for l in letters {
                     guard let cw = l["c"] as? String, let e = l["e"] as? String,
                           let sealed = Data(base64Encoded: e), let secret = secretOf[cw] else { continue }

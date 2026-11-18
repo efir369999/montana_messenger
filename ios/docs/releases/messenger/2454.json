@@ -1,0 +1,26 @@
+{
+ "build": 2454,
+ "notes": {
+  "en": [
+   "A link or text you share from another app now shows the time you sent it, not the time the app picked it up, and stands in its place in the chat.",
+   "Every message wears its own time everywhere -- in the chat, in the list and before the app opens -- so a late arrival no longer changes its time or its place.",
+   "In a video call your picture's quality now follows what the other person actually receives, not the losses on their own side of the line.",
+   "A video call whose picture had to stop on a weak network now tries again by itself and brings the picture back when the network allows.",
+   "After a hold, a reconnection or a screen share the other person's picture is shown again at once, instead of a black screen while the video arrives."
+  ],
+  "ru": [
+   "Ссылка или текст, которыми вы делитесь из другого приложения, теперь показывают время отправки, а не время, когда их подхватило приложение, и стоят на своём месте в чате.",
+   "Каждое сообщение везде носит своё время -- в чате, в списке и до открытия приложения, -- поэтому позднее получение больше не меняет ни время, ни место.",
+   "В видеозвонке качество вашей картинки теперь следует за тем, что действительно получает собеседник, а не за потерями на его стороне линии.",
+   "Видеозвонок, картинка которого остановилась на слабой сети, теперь сам пробует снова и возвращает картинку, когда сеть позволяет.",
+   "После удержания, переподключения или демонстрации экрана картинка собеседника сразу показывается снова, а не чёрный экран, пока видео идёт."
+  ],
+  "zh-Hans": [
+   "从其他应用分享的链接或文字，现在显示您发送的时间，而不是应用接收它的时间，并在聊天中位于正确的位置。",
+   "每条消息在各处都显示自己的时间——聊天中、列表中以及应用打开之前——因此延迟到达不再改变它的时间或位置。",
+   "在视频通话中，您的画面质量现在取决于对方实际收到的内容，而不是对方线路一侧的丢包。",
+   "因网络较弱而停止的视频画面，现在会自行重试，并在网络允许时恢复画面。",
+   "在保持、重新连接或屏幕共享之后，对方的画面会立即重新显示，而不是在视频到达时出现黑屏。"
+  ]
+ }
+}
