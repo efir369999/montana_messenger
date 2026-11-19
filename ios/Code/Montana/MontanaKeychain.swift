@@ -329,6 +329,21 @@ enum MTHeldLetters {
     }
 }
 
+/// THE UNREAD LEDGER HAS ONE OWNER (constitution 15; Agent 1298, the critic of 2455): each chat and its letters not yet read, one
+/// keychain entry the app and the extension share. The app is its authoritative writer (rewrites it whole at every recount,
+/// ChatStore.updateBadge); the extension and a local banner only add while the app is dead. Five places read and wrote the entry
+/// by its name; every reader and writer goes through here now. Both processes compile this file.
+enum MTUnreadLedger {
+    static let key = "unreadCounts"   // NOT-UI: the keychain entry's name
+    static func load() -> [String: Int] {
+        guard let d = MontanaKeychain.get(key), let m = try? JSONDecoder().decode([String: Int].self, from: d) else { return [:] }
+        return m
+    }
+    static func save(_ counts: [String: Int]) { MontanaKeychain.set(key, (try? JSONEncoder().encode(counts)) ?? Data()) }
+    /// Letters of `chat` not yet read: a chat read to its end says 0.
+    static func of(_ chat: String) -> Int { max(0, load()[chat] ?? 0) }
+}
+
 /// THE HANDOFF SHELF (17.09). The sheet uploads a file to the node and used to hand the app only the
 /// manifest — the app then downloaded its own file back (T1 21:56Z: 90 MB up, 90 MB down on cellular,
 /// «media_fill» six times). One folder in the app group: the sheet lays the bytes there under a random
@@ -784,14 +799,14 @@ enum MTLetterBox {
     private static func lay(_ row: Row, cap: Int?, o: Int64) -> Bool {
         guard let m = row["m"], !m.isEmpty, let d = dir else { return false }
         let n = name(m)
-        guard !FileManager.default.fileExists(atPath: d.appendingPathComponent(n).path) else { return false }
+        guard !FileManager.default.fileExists(atPath: d.appendingPathComponent(n).path), !gone(n) else { return false }
         guard write(row, o: o, name: n, in: d) else { return false }
         lock.lock(); read[n] = (o, row); lock.unlock()
         if let cap { trim(d, cap) }
         return true
     }
     private static func trim(_ d: URL, _ cap: Int) {
-        guard let names = try? FileManager.default.contentsOfDirectory(atPath: d.path), cap < names.count else { return }
+        guard let names = (try? FileManager.default.contentsOfDirectory(atPath: d.path))?.filter({ $0.count == 64 }), cap < names.count else { return }
         let born = names.map { n in
             (n, (try? d.appendingPathComponent(n).resourceValues(forKeys: [.creationDateKey]))?.creationDate ?? .distantPast)
         }.sorted { $0.1 < $1.1 }
@@ -835,15 +850,62 @@ enum MTLetterBox {
         return (out.sorted { ($0.1, $0.0) < ($1.1, $1.0) }.map { $0.2 }, dead)
     }
     /// The letters leave the box -- after their rows are on disk, never before ([C-1]: the one remover).
+    /// A LETTER THAT LEFT THE BOX IS NOT LAID AGAIN (OZ 1, the author's word 24670, the law of one witness, part 2: one door of
+    /// reception). The extension's box walk lays every letter of the node's days, and the files of the letters already landed
+    /// were gone, so each walk laid them anew -- T1 18.11.2026 19:10-19:12Z: «box: collected 292», «collected 587» -- and the
+    /// cap of 200 kept the newest files: the iPhone 15's letter laid at 19:09:50 was trimmed, the drain of 19:13 read exactly 200
+    /// letters without it, and it landed only from the node after a restart (19:26:46). A letter leaving leaves its name in
+    /// «left» (an empty file), which lay refuses while the letter can return (sweep, the app's term).
     static func drop(_ mids: [String]) {
         guard let d = dir else { return }
         let names = mids.filter { !$0.isEmpty }.map(name)
         guard !names.isEmpty else { return }
         lock.lock(); for n in names { read[n] = nil; leaving.insert(n) }; lock.unlock()
         remover.async {
-            for n in names { forget(n, in: d) }
+            for n in names { leave(n, in: d) }
             lock.lock(); leaving.subtract(names); lock.unlock()
         }
+    }
+    /// The names of the letters that left: one empty file each, beside the box, never listed by its reads.
+    private static var leftDir: URL? {
+        guard let d = dir else { return nil }
+        let l = d.appendingPathComponent("left", isDirectory: true)
+        if !FileManager.default.fileExists(atPath: l.path) {
+            try? FileManager.default.createDirectory(at: l, withIntermediateDirectories: true,
+                                                     attributes: [.protectionKey: FileProtectionType.completeUntilFirstUserAuthentication])
+        }
+        return l
+    }
+    private static func gone(_ n: String) -> Bool {
+        guard let l = leftDir else { return false }
+        return FileManager.default.fileExists(atPath: l.appendingPathComponent(n).path)
+    }
+    /// The name is written into «left» BEFORE the file goes (Agent 1297, the critic of 2455): the extension lays from its own
+    /// process, and between a removal and a later mark its walk found neither the file nor the name and laid the letter again.
+    private static func leave(_ n: String, in d: URL) {
+        if let l = leftDir { _ = MontanaHandoff.put(Data(), at: l.appendingPathComponent(n), "inbox") }
+        forget(n, in: d)
+    }
+    /// [I-14] A name leaves «left» once its letter can come no more: the term is the app's (MontanaWakePush.letterReturns), the
+    /// same the shown-claims leave by; the extension does not sweep.
+    static func sweep(after term: TimeInterval) {
+        guard let l = leftDir, let names = try? FileManager.default.contentsOfDirectory(atPath: l.path) else { return }
+        let old = Date().addingTimeInterval(-term)
+        for n in names {
+            let u = l.appendingPathComponent(n)
+            if let at = (try? u.resourceValues(forKeys: [.contentModificationDateKey]))?.contentModificationDate, at < old {
+                try? FileManager.default.removeItem(at: u)
+            }
+        }
+    }
+    /// The words a letter standing in the box was laid with -- nil when it is not there or was laid as its long reference.
+    static func words(_ mid: String) -> String? {
+        guard !mid.isEmpty, let d = dir else { return nil }
+        let n = name(mid)
+        lock.lock(); var held = read[n]; lock.unlock()
+        if held == nil, let data = try? Data(contentsOf: d.appendingPathComponent(n)) { held = open(data, name: n) }
+        guard let t = held?.row["t"], !t.isEmpty, !t.hasPrefix("\u{2063}LB:") else { return nil }
+        return t
     }
     /// A conversation erased: every letter of it leaves the box.
     static func dropChat(_ conv: String) {

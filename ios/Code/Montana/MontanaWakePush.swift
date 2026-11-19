@@ -2076,6 +2076,17 @@ enum MontanaWakePush {
                 // A relay hands nothing on (the author's word 24394), so the phone lays a quiet piece's copies itself.
                 if bulk, quiet {
                     for c in MontanaBlobUpload.shared.copies(of: bid, besides: w) {
+                        // A MACHINE AT REST IS PASSED, NOT WAITED OUT (OZ 1, the author's word 24670, part 3). I15 18.11.2026: some
+                        // 2900 quiet copies failed «every door in flight is silent» in a day -- a machine whose every door was dead
+                        // from this network took each copy, and the lane waited out the silence of every piece while the person's
+                        // media stood behind it. copyDoor names a resting door only when every listed door of the machine rests;
+                        // the quiet lane then passes that machine (a failed copy costs the redundancy alone). A letter's copies
+                        // (mirror) still go to a resting machine -- the system carries them when the door answers (18526).
+                        let to = String(c.name.split(separator: "-").last ?? "-")
+                        if doorResting(c.door) {
+                            MontanaTrace.markFolded("blob_copy", "passed to=\(to) -- the machine rests", window: 60, key: to)
+                            continue
+                        }
                         guard await yieldToPerson("copy") else { break }
                         let (cc, cw) = await hedgedPut([(c.door, c.url.absoluteString)], payload: payload, bytes: data.count, bid: bid, bulk: true)
                         if cc != 200 { MontanaTrace.mark("blob_copy", "FAIL id=\(String(bid.prefix(8))) to=\(c.name.split(separator: "-").last ?? "-") code=\(cc) \(cw)") }
@@ -3812,9 +3823,15 @@ enum MontanaWakePush {
                         case .landed(let full):
                             words = full
                         case .waiting:
+                            // The letter stays in the box as an ordinary letter of the pipe just born: its row is settled in place, never
+                            // dropped and laid again -- a dropped name is refused by the box (MTLetterBox.drop, OZ 1 part 2).
+                            // A row no longer in the box (the extension's cap trimmed it while the cargo was asked) is laid again
+                            // as before: its name never left, so the box takes it (Agent 1297, the critic of 2455).
                             await MainActor.run {
-                                inboxDrop([m])
-                                stashLongLetter(conv: ref, mid: m, text: t)
+                                let settled = MTLetterBox.settle(m) { r in
+                                    r["c"] = ref; r["k"] = nil; r["i"] = nil; r["cf"] = nil; return true
+                                }
+                                if !settled { stashLongLetter(conv: ref, mid: m, text: t) }
                                 _ = inboxTaken.remove(m)
                             }
                             return

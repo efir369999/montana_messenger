@@ -4878,7 +4878,8 @@ final class MontanaCall: NSObject {
     /// THE PICTURE'S PROGRESS PER STREAM (23.09): the frames received on each incoming video stream, by
     /// its report id (its bytes where the frame count is absent). The largest counter spoke for the call
     /// before, and after a renegotiation a dead stream's larger count hid the live one: the cover would
-    /// have stood over a moving picture, and dark seconds were counted in the light.
+    /// have stood over a moving picture, and dark seconds were counted in the light. Each stream keeps its LAST count,
+    /// not its largest (Agent 1298, OZ 1 p.5): an ICE restart begins a stream's counters anew under the same id.
     private var pictureSeen: [String: Int] = [:]
     private var lastJournalAt = Date.distantPast   // the journal keeps its five-second rhythm
     private var lastInBytes = 0                    // 12.10: the media flow -- now the belt beside the path
@@ -4944,20 +4945,25 @@ final class MontanaCall: NSObject {
             // type was read off the last local candidate that turned up -- and there are always
             // several in the set -- so the "path" jumped from sample to sample on its own. From
             // exactly this came the false conclusion that "the link hops between direct and relay".
-            var nominatedLocalId: String?
+            // AND THE PAIR IS THE ONE THE CALL RIDES (MontanaCall.riddenPair, Agent 1298): of several nominated pairs the last one
+            // in the dictionary spoke, so the iPhone 15's path swung every sample on 18.11.2026 18:20Z.
+            let ridden = MontanaCall.riddenPair(report)
+            let nominatedLocalId = ridden?.values["localCandidateId"] as? String
+            // THE FAR END IN THE JOURNAL (Agent 1297, the critic of 2455): «one pair, one verdict» reads the far candidate's type,
+            // and a relay learned by a check before its candidate was signalled stands as prflx -- the journal names that end, so
+            // the verdict is checked against what the pair really was.
+            let nominatedRemoteId = ridden?.values["remoteCandidateId"] as? String
+            var far = "?"
             // THE PATH'S OWN WORD (23.09): the bytes that reached us on each candidate pair -- the peer's
             // media AND its reports on ours. Connectivity checks are not in this count (the stat excludes
             // them), so a relay's keepalive cannot pose as the peer (the 29.08 frozen picture).
             var pathNow: [String: Int] = [:]
             for s in report.statistics.values where s.type == "candidate-pair" {
-                if (s.values["nominated"] as? Bool) == true, (s.values["state"] as? String) == "succeeded" {
-                    nominatedLocalId = s.values["localCandidateId"] as? String
-                }
                 pathNow[s.id] = Int((s.values["bytesReceived"] as? NSNumber)?.intValue ?? 0)
             }
             for s in report.statistics.values {
                 switch s.type {
-                case "candidate-pair" where (s.values["nominated"] as? Bool) == true:
+                case "candidate-pair" where s.id == ridden?.id:
                     rttMs = Int(((s.values["currentRoundTripTime"] as? Double) ?? -0.001) * 1000)
                     pair = (s.values["state"] as? String) ?? "?"
                 case "media-source":
@@ -4995,6 +5001,8 @@ final class MontanaCall: NSObject {
                         #endif
                         net = (s.values["networkType"] as? String) ?? "?"
                     }
+                case "remote-candidate":
+                    if let want = nominatedRemoteId, s.id == want { far = (s.values["candidateType"] as? String) ?? "?" }
                 case "remote-inbound-rtp":
                     // THE PEER'S WORD ON MY PICTURE (OZ 1, the author's word 24670, the law of one witness, part 4): what the far
                     // side received of the video I send -- the one witness of my own direction.
@@ -5100,9 +5108,14 @@ final class MontanaCall: NSObject {
             // covers the stale frame with the peer's blurred face, as a voice call shows it. The first
             // new frame takes the cover away.
             if self.isVideo, self.firstVideoIn {
-                // A picture moved when ANY incoming video stream received a frame since the last sample.
-                let moved = pictureNow.contains { $0.value > (self.pictureSeen[$0.key] ?? 0) }
-                for (id, n) in pictureNow { self.pictureSeen[id] = max(self.pictureSeen[id] ?? 0, n) }
+                // A picture moved when ANY incoming video stream's count changed since the last sample.
+                // A COUNT THAT BEGAN ANEW IS A MOVING PICTURE (Agent 1298, the critic of 2455; OZ 1 p.5, the author's word 24658):
+                // an ICE restart begins a stream's counters anew under its own id -- the iPhone 15 18.11.2026 18:21:09Z, in_bytes
+                // 43 MB to 213 KB -- and the count kept as a maximum waited for the new count to pass the old: the cover stood from
+                // 18:21:08Z to 18:32:06Z while frames came at up to 25 a second -- the black screen of p.5. The last count is kept; a
+                // dead stream's count stands still and moves nothing.
+                let moved = pictureNow.contains { $0.value > 0 && $0.value != (self.pictureSeen[$0.key] ?? 0) }
+                for (id, n) in pictureNow { self.pictureSeen[id] = n }
                 if moved {
                     self.pictureStallSamples = 0
                     self.notePeerPicture(paused: false)
@@ -5128,7 +5141,7 @@ final class MontanaCall: NSObject {
             #else
             let via = tun == 1 ? "tunnel" : net
             #endif
-            MontanaTrace.mark("call_audio", "path=\(kind) pair=\(pair) rtt_ms=\(rttMs) bytes=\(aBytes) lost=\(aLost) jitter_ms=\(aJitMs) via=\(via) out_bytes=\(outAudio) mic=\(self.localAudio?.isEnabled == true ? 1 : 0)")
+            MontanaTrace.mark("call_audio", "path=\(kind) far=\(far) pair=\(pair) rtt_ms=\(rttMs) bytes=\(aBytes) lost=\(aLost) jitter_ms=\(aJitMs) via=\(via) out_bytes=\(outAudio) mic=\(self.localAudio?.isEnabled == true ? 1 : 0)")
             if self.isVideo {
                 // OUTGOING VIDEO IS MEASURED TOO: without it "zero bytes" cannot be split into "we
                 // do not send" and "it does not reach us" -- both sides spoke of the same zero.
@@ -5168,10 +5181,20 @@ final class MontanaCall: NSObject {
                         localIds.insert(s.id)
                     }
                 }
-                let nominatedLocal = report.statistics.values.compactMap { s -> String? in
-                    guard s.type == "candidate-pair",
-                          (s.values["state"] as? String) == "succeeded",
-                          (s.values["nominated"] as? Bool) == true else { return nil }
+                let peerRelays = Set(report.statistics.values.filter {
+                    $0.type == "remote-candidate" && ($0.values["candidateType"] as? String) == "relay"
+                }.map { $0.id })
+                // ONE VERDICT OF THE PAIR THE CALL RIDES (MontanaCall.riddenPair, Agent 1298, the critic of 2455): «contains» over every
+                // nominated pair named the call direct when any pair once nominated was, a relay ridden beside it.
+                let nominatedLocal = [MontanaCall.riddenPair(report)].compactMap { s -> String? in
+                    // A PAIR NOT YET PROVEN EARNS NO TOP STEP: T1 16:48:19Z rode a pair «in-progress» while the verdict raised the picture.
+                    guard let s, (s.values["state"] as? String) == "succeeded" else { return nil }
+                    // ONE PAIR, ONE VERDICT -- NEITHER END A RELAY (OZ 1, the author's word 24658 p.2; the law of one witness,
+                    // 24670). T1 18.11.2026 16:48:17Z judged the pair «direct over UDP» by its own srflx end and raised its
+                    // picture to 2000 kbps on LTE, while the iPhone 15 judged the same pair «through a relay» -- its end was
+                    // the relay; within 8 s the round trip stood at 1936 ms, T1 drew no frame and the iPhone's ICE broke
+                    // (16:48:23.9Z). A pair whose far end is a relay rides the relay for both: it is named by that end.
+                    if let far = s.values["remoteCandidateId"] as? String, peerRelays.contains(far) { return "relay:" + far }
                     return s.values["localCandidateId"] as? String
                 }
                 let direct = nominatedLocal.contains { localIds.contains($0) }
@@ -5528,6 +5551,23 @@ final class MontanaCall: NSObject {
         }
     }
 
+    /// THE PAIR THE CALL RIDES HAS ONE WITNESS (OZ 1, the author's word 24658 p.2; the law of one witness, 24670; Agent 1298, the
+    /// critic of 2455): the transport's selected pair. Several pairs stand «nominated, succeeded» at once -- a pair the agent left
+    /// keeps both marks -- and three readers took the last of an unordered dictionary or any of them: the iPhone 15's journal of
+    /// 18.11.2026 18:20Z swung sample by sample between srflx over cellular (rtt 249 ms) and a relay over Wi-Fi (43 ms), and the
+    /// ceiling's verdict named the call direct when any such pair was. Without the transport's word the nominated pair that
+    /// received the most is the live one (the same rule as the live outgoing stream).
+    static func riddenPair(_ report: RTCStatisticsReport) -> RTCStatistics? {
+        for s in report.statistics.values where s.type == "transport" {
+            if let id = s.values["selectedCandidatePairId"] as? String, let p = report.statistics[id] { return p }
+        }
+        let live = report.statistics.values.filter { s in
+            s.type == "candidate-pair" && (s.values["nominated"] as? Bool) == true && (s.values["state"] as? String) == "succeeded"
+        }
+        return live.max { a, b in received(a) < received(b) }
+    }
+    private static func received(_ s: RTCStatistics) -> Int { (s.values["bytesReceived"] as? NSNumber)?.intValue ?? 0 }
+
     // Diagnostics: which ICE pair is actually selected (type/protocol) + bytes — into the local trace.
     func reportSelectedPair(tag: String) {
         guard let pc = pc else { return }
@@ -5542,10 +5582,7 @@ final class MontanaCall: NSObject {
                     candById[st.id] = (t + (rp.isEmpty ? "" : "(\(rp))"), p)
                 }
             }
-            for (_, st) in report.statistics where st.type == "candidate-pair" {
-                let nominated = (st.values["nominated"] as? Bool) ?? false
-                let state = (st.values["state"] as? String) ?? ""
-                guard nominated, state == "succeeded" else { continue }
+            if let st = MontanaCall.riddenPair(report) {
                 let l = candById[(st.values["localCandidateId"] as? String) ?? ""]
                 let r = candById[(st.values["remoteCandidateId"] as? String) ?? ""]
                 bytesTx = String((st.values["bytesSent"] as? UInt64) ?? 0)

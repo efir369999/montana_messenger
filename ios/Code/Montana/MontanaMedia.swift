@@ -1545,6 +1545,7 @@ enum MontanaHousekeeping {
             E2E.shared.sweepOrphanPipes()
             sweepRetiredDoor()
             MTShownOnce.sweep(after: MontanaWakePush.letterReturns)   // a claim leaves once its letter can come no more ([I-14]; OZ 1 p.1.7)
+            MTLetterBox.sweep(after: MontanaWakePush.letterReturns)   // and the name of a letter that left the box, by the same term (OZ 1 part 2)
             MontanaLocalVault.settle()   // the vault's loads no key names any more leave ([I-14], 23.10.2026)
         }
     }

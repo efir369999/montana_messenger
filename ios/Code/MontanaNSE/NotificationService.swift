@@ -159,7 +159,11 @@ final class NotificationService: UNNotificationServiceExtension {
             // EVERY JUDGEMENT BELOW READS THE OPENED LETTER (11.11.2026, OZ 1 p.6): a long letter travels as its «LB:» reference, and a
             // group's word inside it (a renewal with the group's face is 16 KB) was judged by the reference -- no group, a quiet face
             // with empty words rang on T2 and T3. The reference itself is only the road to the words.
-            let text = rawText.hasPrefix("\u{2063}LB:") ? (Self.resolveLongLetterSync(rawText) ?? rawText) : rawText
+            // A REPEAT IS JUDGED BY THE WORDS THE BOX ALREADY HOLDS (OZ 1, the author's word 24670, part 2): T1 18.11.2026 16:58Z, a
+            // muted group's letter rang its fifth time while every door was down; its reference did not open in 8 s, the group was not
+            // seen, and the same mid went out as a personal letter whose chat holds nothing. The words laid by an earlier wake are the
+            // one witness; the network is asked only for a letter the box does not hold opened.
+            let text = rawText.hasPrefix("\u{2063}LB:") ? (MTLetterBox.words(mid) ?? Self.resolveLongLetterSync(rawText) ?? rawText) : rawText
             Self.stashLetter(conv: conv, mid: mid, text: text, name: envName, glyph: envGlyph,
                              qt: envQt, qm: envQm, lp: envLp, author: envAuthor)
             openedMid = mid
@@ -392,6 +396,19 @@ final class NotificationService: UNNotificationServiceExtension {
             // opened nothing to the Author's taps. Every wake of a muted chat is the quiet plate.
             Self.diagLine("quiet conv=\(convKey.prefix(10)) — quiet plate, taken off")
             face = Self.quietFace()
+        } else if !openedMid.isEmpty, !fresh, held, MTUnreadLedger.of(convKey) == 0 {
+            // A LETTER THE DEVICE HOLDS AND HAS RUNG RINGS NOTHING AGAIN (OZ 1, the author's word 24658 p.4, «the same after 23:00»;
+            // MTHeldLetters is the one witness of a letter in its chat): T1 18.11.2026 20:17:24Z, 20:17:44Z and 20:23:41Z the node woke
+            // the phone with the iPhone 15's letter of 19:09:50, landed in its chat at 19:26:45Z -- «repeat shown=true held=true» --
+            // and every repeat handed its face again: the list showed it as new (the tap of 20:20:01Z named it), the chat held nothing
+            // new. Shown and held: the quiet plate, taken off.
+            // ONLY WHEN ITS CHAT IS READ (Agent 1298, the critic of 2455): the node rings a letter by its mid (apns-collapse-id), the
+            // quiet plate goes out under that id, replaces the letter's own face and leaves the list with it. T1 18.11 19:26:47Z the
+            // letter t1795028 landed unread (badge total=1), the repeats of 19:27:02-19:27:23 came held, and at 19:33:34Z the Author
+            // opened the chat by that very banner (chat_open why=banner) -- a quiet plate there would have taken it away. The repeats
+            // of 20:17Z came to a read chat (total=0): those say nothing. A chat with letters unread keeps the face, passive (below).
+            Self.diagLine("held mid=\(openedMid.prefix(8)) — shown and held, chat read, quiet plate, taken off")
+            face = Self.quietFace()
         } else if !openedMid.isEmpty, !fresh || held {
             Self.diagLine("repeat mid=\(openedMid.prefix(8)) shown=\(!fresh) held=\(held) — quiet, same face")
             content.sound = nil
@@ -402,11 +419,9 @@ final class NotificationService: UNNotificationServiceExtension {
             // THE SHARE SHEET'S ORDER FOLLOWS THE LETTER (MTShareOrder): the chat goes up in the sheet's mirror as it goes up in the list.
             if !convKey.isEmpty, !openedQuiet { MTShareOrder.raise(convKey) }
             if !convKey.isEmpty, !openedQuiet {
-                var counts: [String: Int] = [:]
-                if let d = MontanaKeychain.get("unreadCounts"),
-                   let m = try? JSONDecoder().decode([String: Int].self, from: d) { counts = m }
+                var counts = MTUnreadLedger.load()
                 counts[convKey, default: 0] += 1
-                if let d = try? JSONEncoder().encode(counts) { MontanaKeychain.set("unreadCounts", d) }
+                MTUnreadLedger.save(counts)
                 content.badge = NSNumber(value: counts.values.reduce(0, +))
                 Self.diagLine("badge conv=\(convKey.prefix(10)) total=\(counts.values.reduce(0, +)) src=nse")
             }
@@ -476,10 +491,7 @@ final class NotificationService: UNNotificationServiceExtension {
         var missed = Int(String(data: MontanaKeychain.get("missedUnseen") ?? Data(), encoding: .utf8) ?? "") ?? 0
         missed += 1
         MontanaKeychain.set("missedUnseen", Data(String(missed).utf8))
-        var unread = 0
-        if let d = MontanaKeychain.get("unreadCounts"), let m = try? JSONDecoder().decode([String: Int].self, from: d) {
-            unread = m.values.reduce(0, +)
-        }
+        let unread = MTUnreadLedger.load().values.reduce(0, +)
         if let c = look.mutableCopy() as? UNMutableNotificationContent {
             c.badge = NSNumber(value: unread + missed)
             diagLine("badge missed=\(missed) total=\(unread + missed) src=nse")

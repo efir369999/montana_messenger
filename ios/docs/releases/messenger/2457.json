@@ -1,0 +1,29 @@
+{
+ "build": 2457,
+ "notes": {
+  "en": [
+   "A message that arrives while the app is closed is no longer pushed out of the waiting queue when many messages come at once -- it lands in its chat.",
+   "A message you have already read in its chat no longer comes back as a new notification; an unread one keeps its notification until you open it.",
+   "A repeated notification of a long message keeps the words and the chat already received, instead of showing it as a personal message.",
+   "Photos and videos no longer wait on a server that cannot be reached from your network: backup copies pass it until it answers again.",
+   "A video call that goes through a relay no longer starts at full quality on one side -- the picture does not freeze and the call does not break in its first seconds.",
+   "After a call is put on hold and resumed, the other person's picture no longer stays black while their video keeps arriving."
+  ],
+  "ru": [
+   "Сообщение, пришедшее при закрытом приложении, больше не вытесняется из очереди ожидания, когда сообщений приходит много сразу, -- оно ложится в свой чат.",
+   "Сообщение, уже прочитанное в чате, больше не приходит снова как новое уведомление; непрочитанное сохраняет своё уведомление, пока вы его не откроете.",
+   "Повторное уведомление длинного сообщения сохраняет уже полученные слова и чат, а не показывает его как личное сообщение.",
+   "Фото и видео больше не ждут сервер, недоступный из вашей сети: резервные копии обходят его, пока он снова не ответит.",
+   "Видеозвонок через ретранслятор больше не стартует на одной стороне с полным качеством -- картинка не замирает и звонок не рвётся в первые секунды.",
+   "После удержания и возврата в звонок картинка собеседника больше не остаётся чёрной, пока его видео продолжает приходить."
+  ],
+  "zh-Hans": [
+   "应用关闭时收到的消息，在同时收到大量消息时不再被挤出等待队列——它会进入自己的聊天。",
+   "已在聊天中读过的消息不再作为新通知再次出现；未读消息的通知会保留，直到您打开它。",
+   "长消息的重复通知会保留已收到的文字和所属聊天，而不再显示为私人消息。",
+   "照片和视频不再等待从您的网络无法访问的服务器：备份副本会跳过它，直到它再次响应。",
+   "通过中继的视频通话不再在一方以最高画质开始——画面不会在最初几秒冻结，通话也不会中断。",
+   "通话保持并恢复后，对方的画面在视频持续传来时不再保持黑屏。"
+  ]
+ }
+}

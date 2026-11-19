@@ -173,10 +173,10 @@ enum MontanaNotify {
         content.userInfo["from"] = MTNoticeAlias.of(from)
 
         if countUnread, MTRing.chat(chat) {
-            var counts = MontanaKeychain.get("unreadCounts").flatMap { try? JSONDecoder().decode([String: Int].self, from: $0) } ?? [:]
+            var counts = MTUnreadLedger.load()
             if !chat.isEmpty { counts[chat, default: 0] += 1 }
             content.badge = NSNumber(value: counts.values.reduce(0, +))
-            MontanaKeychain.set("unreadCounts", (try? JSONEncoder().encode(counts)) ?? Data())
+            MTUnreadLedger.save(counts)
         }
 
         let quiet = !MTRing.chat(chat)

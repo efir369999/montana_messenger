@@ -601,13 +601,14 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         receiveVoip(payload, mustReport: true, completion: completion)
     }
 
-    // Public PushKit delegate introduced in iOS 26.4. Our 26.2 SDK has no metadata type yet;
-    // the documented Objective-C selector and NSObject's public KVC bridge keep one handler.
+    // Public PushKit delegate introduced in iOS 26.4. The 26.2 SDK had no metadata type, so a hand-named Objective-C selector
+    // carried it; SDK 27 declares the method in PKPushRegistryDelegate with its type, and the hand-named copy collided with the
+    // protocol's own requirement (Xcode 27.2, Agent 1298: «conflicts with optional requirement»). The typed method is the one
+    // handler; the metadata is still read by MTVoipReport.required, where an unknown answer means «report».
     // https://developer.apple.com/documentation/pushkit/pkvoippushmetadata/mustreport
     @available(iOS 26.4, *)
-    @objc(pushRegistry:didReceiveIncomingVoIPPushWithPayload:metadata:withCompletionHandler:)
-    func receiveVoip(_ registry: PKPushRegistry, payload: PKPushPayload, metadata: NSObject,
-                     completion: @escaping () -> Void) {
+    func pushRegistry(_ registry: PKPushRegistry, didReceiveIncomingVoIPPushWith payload: PKPushPayload,
+                      metadata: PKVoIPPushMetadata, withCompletionHandler completion: @escaping () -> Void) {
         let required = MTVoipReport.required(metadata)
         MontanaTrace.mark("voip_report", "metadata required=\(required ? 1 : 0)")
         receiveVoip(payload, mustReport: required, completion: completion)
